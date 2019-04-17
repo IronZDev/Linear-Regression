@@ -9,6 +9,8 @@
 
 library(shiny)
 library(shinyjs)
+library(caret)
+library(ggplot2)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -38,7 +40,8 @@ ui <- fluidPage(
     
     # Show a plot of the generated distribution
     mainPanel(
-      tableOutput("fileContent")
+      h3(textOutput("MAE")),
+      plotOutput("maePlot")
       # plotOutput("distPlot")
     )
   )
@@ -73,23 +76,27 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$startBtn, {
-    print(data()[[input$select]])
+    indices = createMultiFolds(y=data()[[input$select]],5,1)
+    MAEs = vector() # Vector of MAEs
+    for (index in  1:length(indices)) {
+      training.data = data()[indices[[index]], ] 
+      test.data = data()[-indices[[index]], ]
+      target = training.data[[input$select]]
+      training.data[[input$select]] = NULL # Delete the column to be predicted from taining data
+      model = lm(target~., training.data)
+      predictions = predict(model, test.data)
+      MAE = mean(abs(predictions - test.data[[input$select]]))
+      print(MAE)
+      MAEs = c(MAEs, MAE)
+    }
+    # print(mean(MAEs))
+    output$MAE = renderText({
+      return(paste0("Overall mean absolute error: ",mean(MAEs)))
+    })
+    output$maePlot = renderPlot({
+      qplot(1:length(indices), data=MAEs, geom ="bar", main = "Mean absolute errors for various folds", xlab = "Fold number", ylab = "Mean absolute error")
+    })
   })
-  
-  # output$fileContent <- renderTable({
-  #   # Check if file exists
-  #   if (is.null(input$file))
-  #     return(NULL)
-  #   
-  #   # Check if file has .dat extension
-  #   extension = strsplit(input$file$name, "\\.")
-  #   if (extension[[1]][2] != "csv") {
-  #     print("Wrong file format!")
-  #     return(NULL)
-  #   }
-  #   
-  #   return(read.csv(file = input$file$datapath, header = TRUE, sep=","))
-  # })
 }
 
 # Run the application 
