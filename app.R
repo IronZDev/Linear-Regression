@@ -40,9 +40,8 @@ ui <- fluidPage(
     
     # Show a plot of the generated distribution
     mainPanel(
-      h3(textOutput("MAE")),
+      h3(textOutput("MAE"), align="center"),
       plotOutput("maePlot")
-      # plotOutput("distPlot")
     )
   )
 )
@@ -90,11 +89,22 @@ server <- function(input, output, session) {
       MAEs = c(MAEs, MAE)
     }
     # print(mean(MAEs))
+    output$category = renderText({
+      return(input$select)
+    })
     output$MAE = renderText({
       return(paste0("Overall mean absolute error: ",mean(MAEs)))
     })
     output$maePlot = renderPlot({
-      qplot(1:length(indices), data=MAEs, geom ="bar", main = "Mean absolute errors for various folds", xlab = "Fold number", ylab = "Mean absolute error")
+      plotData = data.frame(num = 1:length(MAEs), MAE = MAEs)
+      ggplot(plotData, aes(x=num, y=MAE))+
+        geom_bar(stat="identity", fill="steelblue")+
+        geom_text(aes(label=sprintf("%0.6f", round(MAE, digits = 6))), position = position_stack(vjust = 0.5), color="white", size=5)+
+        xlab("Number of fold as test data") + ylab("Average mean value")+
+        ggtitle("Average mean values for particular folds as test data")+
+        theme(plot.title = element_text(hjust = 0.5, size=20, face="bold"),
+              axis.title = element_text(size=15, face="bold"),
+              axis.text = element_text(size=12))
     })
   })
 }
