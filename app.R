@@ -15,7 +15,7 @@ library(ggplot2)
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   
-  useShinyjs(),
+  useShinyjs(), # Using shinyJS for disabling and enabling elements
   
   # Application title
   titlePanel("Linear Regression"),
@@ -34,8 +34,6 @@ ui <- fluidPage(
                     selected = -1),
         actionButton("startBtn", "Calculate!")
       )
-      # hr(),
-      # fluidRow(column(3, verbatimTextOutput("value")))
     ),
     
     # Show a plot of the generated distribution
@@ -82,10 +80,11 @@ server <- function(input, output, session) {
       test.data = data()[-indices[[index]], ]
       target = training.data[[input$select]]
       training.data[[input$select]] = NULL # Delete the column to be predicted from taining data
+      print(cor(training.data))
       model = lm(target~., training.data)
+      print(summary(model))
       predictions = predict(model, test.data)
       MAE = mean(abs(predictions - test.data[[input$select]]))
-      print(MAE)
       MAEs = c(MAEs, MAE)
     }
     # print(mean(MAEs))
